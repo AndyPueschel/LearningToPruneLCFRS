@@ -1,0 +1,4 @@
+setuptools >= 38.5.0
+disco-dop
+pandas == 0.23.0rc2
+scipy
