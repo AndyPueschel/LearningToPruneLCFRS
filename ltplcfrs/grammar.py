@@ -106,89 +106,39 @@ class Grammar(object):
             .extend(self.discontinuous_rules)
 
 
-def rule_word(rule):
-    """In case of a pos rule, extract the word of the rule.
-    Otherwise extract the yield function of the rule.
-
-    Parameters
-    ----------
-    rule : list((tuple(str), tuple(str | tuple(int))), double)
-        The rule.
-
-    Returns
-    -------
-    tuple(str | tuple(int))
-        The word or yield function.
-
-    """
-    (_nts, yf), _p = rule
-    return yf
-
-
-def rule_lhs(rule):
-    """Return the nonterminal on the left hand side.
-
-    Parameters
-    ----------
-    rule : list((tuple(str), tuple(str | tuple(int))), double)
-        The rule.
-
-    Returns
-    -------
-    str
-        The lhs nonterminal.
-
-    """
-    (nts, _yf), _p = rule
-    return nts[0]
-
-
-def rule_rhs(rule):
-    """Return the nonterminals on the right hand side of the rule.
-
-    Parameters
-    ----------
-    rule : list((tuple(str), tuple(str | tuple(int))), double)
-        The rule.
-
-    Returns
-    -------
-    list(str)
-        The list of the rhs nonterminals.
-
-    """
-    (nts, _yf), _p = rule
-    return nts[1:]
-
-
-def rule_prob(rule):
-    """Return the weight (probability) of the rule.
-
-    Parameters
-    ----------
-    rule : list((tuple(str), tuple(str | tuple(int))), double)
-        The rule.
-
-    Returns
-    -------
-    double
-        The probability of the rule.
-
-    """
-    _r, p = rule
-    # p has the form: (numerator, denominator)
-    return p[0] / p[1]
-
-
 class Rule(object):
+    """The Rule class contains / restructures the information given by
+    a rule according to the discodop library.
+
+    Attributes
+    ----------
+    lhs : str
+        The left hand side of the rule.
+    rhs : tuple(str)
+        The right hand side of the rule.
+    yf : tuple(str) or tuple(tuple(int))
+        The yield function of the rule.
+    prob : (int, int)
+        The probability (weight) of the rule.
+
+    """
 
     def __init__(self, discodop_rule):
+        """Initialize an instance of a rule.
+
+        Parameters
+        ----------
+        discodop_rule : list((tuple(str), tuple(str | tuple(int))), double)
+            The rule according to the discodop library.
+
+        """
         if not isinstance(discodop_rule, tuple):
             self.lhs = "None"
             self.rhs = []
             self.prob = (0, 1)
             self.yf = tuple(())
         else:
+            # p has the form (numerator, denominator)
             (nts, yf), p = discodop_rule
             self.lhs = nts[0]
             self.rhs = list(nts[1:])
@@ -196,9 +146,25 @@ class Rule(object):
             self.yf = yf
 
     def get_prob(self):
+        """Return the probability.
+
+        Returns
+        -------
+        double
+            The probability (weight) of the rule.
+
+        """
         return float(self.prob[0] / self.prob[1])
 
     def __str__(self):
+        """Return the string representation.
+
+        Returns
+        -------
+        str
+            The string representation.
+
+        """
         return '%s -> %s # %s # %s' %\
             (str(self.lhs),
              ' '.join(self.rhs),
@@ -206,7 +172,15 @@ class Rule(object):
              ' / '.join([str(p) for p in self.prob]))
 
     def __repr__(self):
+        """Return the string representation for 'repr'.
+
+        Returns
+        -------
+        str
+            The string representation for 'repr'.
+
+        """
         return '%s -> %s' % (self.lhs, ' '.join(self.rhs))
 
 
-__all__ = ['Grammar', 'rule_word', 'rule_lhs', 'rule_rhs', 'rule_prob', 'Rule']
+__all__ = ['Grammar', 'Rule']
