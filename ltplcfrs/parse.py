@@ -52,6 +52,9 @@ class Parser(object):
         hg = Hypergraph(sentence)
         slist = list(map(lambda s: escape(s), sentence.split()))
         agenda = []  # 'queue' of hyperedges
+        newagenda = []  # new items will be added to this 'queue'
+        preagenda = []  # contains items from the last 'queue'
+        visited = []  # remembers already visited items
 
         # create leaves in derivation graph.
         trules = self.grammar.get_terminalrules()
@@ -67,11 +70,17 @@ class Parser(object):
         # create the other items for derivation graph.
         while agenda:
             item = agenda.pop(0)
-            print("item: %s" % str(item.get_signature()))
+            if item.get_signature() in visited:
+                continue
+            hg.add_edge(item)
+            preagenda.append(item)
+            visited.append(item.get_signature())
+            print("item: %s # restitems: %i" %
+                  (str(item.get_signature()), len(agenda)))
             stdout.flush()
             # set of (cover, nonterminal) tuples
             tmpnodes = [(c.get_predecessor().get_label(), c.get_nonterminal())
-                        for c in hg.get_edges()]
+                        for c in hg.get_edges() if c not in preagenda]
             tmpitem = (item.get_predecessor().get_label(),
                        item.get_nonterminal())
             tmpnodes.append(tmpitem)
@@ -87,7 +96,6 @@ class Parser(object):
                     )
                 pairs = list(product(*constituents))
                 for pair in pairs:
-                    # print("\npairlist: %s" % str([str(i) for i in pair]))
                     cover = [pos for cs in pair for pos in cs]
                     cover.sort()
                     # cover must not be empty
@@ -127,16 +135,11 @@ class Parser(object):
                     succs = list(map(lambda x: hg.get_nodes()[x], list(pair)))
                     he = Hyperedge(
                             crule.lhs, crule.get_prob(),
-                            1, node, zip(succs, crule.rhs)
+                            1, node, list(zip(succs, crule.rhs))
                             )
                     # enqueue the new item if not already visited
-                    joinedlists = list(hg.get_edges())
-                    joinedlists.extend(list(agenda))
-                    if len(list(filter(
-                            lambda x: x.get_signature() == he.get_signature(),
-                            joinedlists))) > 1:
-                        continue
-                    agenda.append(he)
+                    if not he.get_signature() in visited:
+                        newagenda.append(he)
 
             # regarding discontinuous rules
             for drule in self.grammar.get_discontinuousrules():
@@ -207,19 +210,15 @@ class Parser(object):
                     succs = list(map(lambda x: hg.get_nodes()[x], list(pair)))
                     he = Hyperedge(
                             drule.lhs, drule.get_prob(),
-                            1, node, zip(succs, drule.rhs)
+                            1, node, list(zip(succs, drule.rhs))
                             )
                     # enqueue the new item if not already visited
-                    joinedlists = list(hg.get_edges())
-                    joinedlists.extend(list(agenda))
-                    if len(list(filter(
-                            lambda x: x.get_signature() == he.get_signature(),
-                            joinedlists))) > 1:
-                        continue
-                    agenda.append(he)
-
-            # finally add the item to the hypergraph
-            hg.add_edge(item)
+                    if he.get_signature() in visited:
+                        newagenda.append(he)
+            if not agenda:
+                preagenda = []
+                agenda = list(newagenda)
+                newagenda = []
         return hg
 
 

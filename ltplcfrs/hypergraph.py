@@ -2,6 +2,7 @@
 Hypernode and Hyperedge."""
 
 from queue import Queue
+from sys import stdout
 
 from discodop.tree import Tree, escape
 
@@ -108,8 +109,15 @@ class Hypergraph(object):
         """
         root = tuple(range(len(self.sentence)))
         if root in self.nodes:
-            nt = max(root.get_witnesses(), key=root.get_witnesses().get)
-            return self.nodes[root].get_subtree(nt)
+            node = self.nodes[root]
+            if node.get_witnesses():
+                maxvalue = ("None", (None, 0))
+                for k, v in node.get_witnesses().items():
+                    if maxvalue[1][1] < v[1]:
+                        maxvalue = (k, v)
+                return node.get_subtree(maxvalue[0])
+            else:
+                return "node: %s has no witnesses" % str(node.get_label())
         else:
             return "The sentence: \"%s\" could not be parsed" %\
                 ' '.join(self.sentence)
@@ -158,8 +166,8 @@ class Hyperedge(object):
         pre : Hypernode
             The predeccessing node`.
         suc : list((Hypernode, str))
-            The successing hypernodes paired with
-            corresponding nonterminal.
+            The successing hypernodes paired with their
+            corresponding nonterminals.
 
         """
         # assign parameter values
@@ -169,7 +177,7 @@ class Hyperedge(object):
         self.probability = prob
         self.successors = suc
         # update pre and sucs
-        if isinstance(suc, dict):
+        if isinstance(suc, list):
             for node, _nt in suc:
                 node.add_out(self)
         pre.add_in(self)
@@ -245,14 +253,16 @@ class Hyperedge(object):
         else:
             self.pruningbit = pb
         # change propagation.
+        updated = []  # list of already updated node-nonterminal tuples
         q = Queue()  # queue of (node, nonterminal) tuples
         q.put((self.predecessor, self.nonterminal))
         while not q.empty():
             tmp_node, tmp_nt = q.get()
+            if (tmp_node, tmp_nt) in updated:
+                continue
+            updated.append((tmp_node, tmp_nt))
             tmp_node.update_witness(tmp_nt)
-            for out_edge in [oe for oe in tmp_node.get_outs()
-                             if (tmp_node, tmp_nt)
-                             in tmp_node.get_outs().get_successors()]:
+            for out_edge in [oe for oe in tmp_node.get_outs()]:
                 pre_node = out_edge.get_predecessor()
                 pre_nt = out_edge.get_nonterminal()
                 tmp_witness = pre_node.get_witness(pre_nt)[0]
@@ -294,7 +304,7 @@ class Hypernode(object):
     ----------
     label : tuple(int)
         The cover of the hypernode as the label.
-    witness : dict(str, Hyperedge)
+    witness : dict(str, (Hyperedge, double))
         The witnesses for each nonterminal and the responsible hyperedge.
     outs : list(Hyperedge)
         The list of outgoing hyperedges.
@@ -329,17 +339,12 @@ class Hypernode(object):
         incoming hyperedges.
 
         """
-        if self.is_leaf():
-            self.witness = {}
-            return
-        else:
-            for edge in self.ins:
-                temp_prod = edge.get_pruningbit() * edge.get_probability()
-                for node, n in edge.get_successors():
-                    temp_prod = node.get_witness(n)[1] * temp_prod
-                if self.witness.get(nt, (None, 0))[1] < temp_prod:
-                    self.witness[nt] = (edge, temp_prod)
-            return
+        for edge in self.ins:
+            temp_prod = edge.get_pruningbit() * edge.get_probability()
+            for node, n in edge.get_successors():
+                temp_prod = node.get_witness(n)[1] * temp_prod
+            if self.witness.get(nt, (None, 0))[1] < temp_prod:
+                self.witness[nt] = (edge, temp_prod)
 
     def is_leaf(self):
         """Check whether the hypernode is a leaf.
@@ -383,7 +388,7 @@ class Hypernode(object):
 
         Returns
         -------
-        tuple(Hyperdge, double)
+        (Hyperdge, double)
             The witnesses with their corresponding probability.
 
         """
@@ -394,7 +399,7 @@ class Hypernode(object):
 
         Returns
         -------
-        dict(str(tuple(Hyperedge, double)))
+        dict(str((Hyperedge, double)))
             The witnesses for each nonterminal.
 
         """
@@ -470,11 +475,11 @@ class Hypernode(object):
             The tree with the current node as root.
 
         """
-        if self.is_leaf():
-            edge = self.get_witness(nt)[0]
-            return Tree(edge.get_nonterminal(), [self.get_label()])
+        edge = self.get_witness(nt)[0]
+        if not edge.get_successors():
+            stdout.flush()
+            return Tree(edge.get_nonterminal(), [self.get_label()[0]])
         else:
-            edge = self.get_witness(nt)[0]
             s = edge.get_successors()
             return Tree(edge.get_nonterminal(),
                         [t.get_subtree(n) for t, n in s])

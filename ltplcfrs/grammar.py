@@ -114,7 +114,7 @@ class Rule(object):
     ----------
     lhs : str
         The left hand side of the rule.
-    rhs : tuple(str)
+    rhs : list(str)
         The right hand side of the rule.
     yf : tuple(str) or tuple(tuple(int))
         The yield function of the rule.

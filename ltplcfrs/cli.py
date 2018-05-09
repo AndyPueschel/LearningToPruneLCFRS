@@ -52,15 +52,20 @@ def train(args, stdinput):
     corpus = TigerXMLCorpusReader(args[0], encoding='utf8')
     iterations = int(args[1]) if len(args) >= 2 else 1
     weight = float(args[2]) if len(args) >= 3 else 1
+    slength = int(args[3]) if len(args) >= 4 else None
+    nsents = int(args[4]) if len(args) >= 5 else None
 
     # create grammar and corpus
     trees = [canonicalize(t) for t in list(corpus.trees().values())]
     sentences = list(corpus.sents().values())
     grammar = Grammar(trees, sentences)
-    simplecorpus = zip(sentences, trees)
+    simplecorpus = [(s, _t) for s, _t in list(zip(sentences, trees))
+                    if len(s) <= slength]
+    if nsents:
+        simplecorpus = simplecorpus[:nsents]
 
     # print the trained pruning policy into the console
-    stdout.write(lols(grammar, simplecorpus, pp, iterations, weight))
+    stdout.write(str(lols(grammar, simplecorpus, pp, iterations, weight)))
 
 
 def parse(args, stdinput):
@@ -89,11 +94,14 @@ def parse(args, stdinput):
     # create derivation tree
     parser = Parser(grammar)
     derivationgraph = parser.parse(sent, pp)
+    print("leaves:")
     derivationtree = derivationgraph.get_tree()
+    stdout.flush()
 
     # print results
     if isinstance(derivationtree, Tree):
         # print graphical representation if the sentence could be parsed
+        print(derivationtree.pprint())
         drawtree = DrawTree(derivationtree, sent.split())
         print("\n derivation tree: \n" + drawtree.text())
     else:
@@ -105,7 +113,7 @@ def parse(args, stdinput):
         print("\n gold tree: \n" + drawgold.text())
         # print recall if both trees are available
         if isinstance(derivationtree, Tree):
-            print("\n recall: %d" % accuracy(derivationtree, goldtrees[0]))
+            print("\n recall: %f" % accuracy(derivationtree, goldtrees[0]))
 
 
 def help(args, stdinput):
@@ -127,17 +135,19 @@ def help(args, stdinput):
 COMMANDS = {
             'train': {'cmd': train,
                       'minargs': 1,
-                      'maxargs': 3,
+                      'maxargs': 5,
                       'help': "train: trains a pruning policy and returns it" +
                               " via std out. \n" +
                               "       Usage: <pp> | train <corpus-file>" +
-                              " [<i>, <w>] \n" +
+                              " [<i>, <w>, <l>, <n>] \n" +
                               "       <pp>: initial pruning policy via" +
                               " stdin \n" +
                               "       <corpus-file>: the file path to the" +
                               " corpus \n" +
                               "       <i>: the number of iterations \n" +
-                              "       <w>: the accuracy-runtime trade off \n",
+                              "       <w>: the accuracy-runtime trade off \n" +
+                              "       <l>: the maximum sentence length \n" +
+                              "       <n>: the maximum number of sentences \n",
                       'short': "<pp> | train <corpus-file> [<i>, <w>] \n"},
             'parse': {'cmd': parse,
                       'minargs': 2,
