@@ -1,10 +1,10 @@
-\data
-!\data\policy.txt
-!\data\tiger.1-1000.utf8.xml
-\latex
-\docs
-\material
-\.idea
+data/*
+!data/policy.txt
+!data/tiger.1-1000.utf8.xml
+latex
+docs
+material
+.idea
 Pipfile
 Pipfile.lock
 tparse.txt
