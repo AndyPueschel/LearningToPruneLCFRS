@@ -4,17 +4,17 @@ The implementation is an adaption of the lols algorithm introduced in
 Tim Vieira and Jason Eisner (2017) to satisfy 'prune charts' in form of
 hypergraphs."""
 
-from .pruningpolicy import PruningPolicy, Mode
+from .pruningpolicy import PruningPolicy
 from .parse import Parser
+from .features import FeatureItem, FeatureCollector
 
 from discodop.tree import Tree
 
-import numpy as np
-from pandas import DataFrame
 from sys import stdout
 
 
-def lols(grammar, corpus, pp=PruningPolicy(), iterations=1, weight=1):
+def lols(grammar, corpus, pp=PruningPolicy(), iterations=1, weight=1,
+         featkeys=('l', 'sl', 'bwd', 'bwcd', 'ss', 'sw', 'wb', 'wscd')):
     """The Locally Optimal Learning to Search algorithm.
 
     Parameters
@@ -29,6 +29,8 @@ def lols(grammar, corpus, pp=PruningPolicy(), iterations=1, weight=1):
         The number of iterations.
     weight : double
         The accuracy-runtime trade off.
+    featkeys : list(str)
+        The list of unique feature keys.
 
     Returns
     -------
@@ -36,48 +38,78 @@ def lols(grammar, corpus, pp=PruningPolicy(), iterations=1, weight=1):
         The trained pruning policy.
 
     """
+    # default values
+    pp = pp if pp else PruningPolicy()
+    iterations = iterations if iterations is not None else 1
+    weight = weight if weight is not None else 1
+    if not featkeys:
+        featkeys = ('l', 'sl', 'bwd', 'bwcd', 'ss', 'sw', 'wb', 'wscd')
+    featkeys = list(featkeys)
+
     policies = {0: pp}  # i-th pruning policy represents pp after i iterations
-    dataset = {}  # contains lists of state-reward tuples for each iteration
-    rewards = {}  # avg rewards after each iteration
+    dataset = []  # contains lists of state-reward tuples for each iteration
+    rewards = {}  # avg rewards after each iteration for last pruning policy
     parser = Parser(grammar)
+    collector = FeatureCollector(grammar, featkeys)
     for i in range(iterations):
-        dataset[i] = []
-        rewardsum = 0  # initialize denominator for avg reward
+        datasubset = []  # contains state-reward tuples
+        rewardsum = 0.0  # initialize denominator for avg reward
         for sentence, tree in corpus:
             # roll in
-            print(str(sentence))
-            print(tree.pprint())
+            print("\n####\n")
+            print("iteration: %i # sentence: %s" % (i, str(sentence)))
+            print("parse...")
             stdout.flush()
             derivation_graph = parser.parse(' '.join(sentence), policies[i])
-            r = {}  # two dimensional 'vector' of rewards
             for edge in derivation_graph.get_edges():
+                # dont train leaf items
+                if not edge.get_successors():
+                    continue
+                # create vector indices
+                r = {}  # two dimensional 'vector' of rewards
                 pbit = edge.get_pruningbit()
                 nbit = (pbit + 1) % 2
+                # create feature item
+                lhs = edge.get_nonterminal()
+                rhs = [(nt, n.get_label()) for n, nt in edge.get_successors()]
+                fitem = FeatureItem(lhs, rhs, sentence)
                 # roll out
-                print("roll-out")
-                stdout.flush()
+                print("\nsuccs: %s" % str(edge.get_successors()))
+                print("roll-out: %s" % str(fitem))
+                print("\npre change:")
                 r[pbit] = reward(weight, derivation_graph, tree)
                 edge.set_pruningbit(nbit)
+                print("\npast change:")
                 r[nbit] = reward(weight, derivation_graph, tree)
+                print("\nrewards: %s" % str(r))
                 edge.set_pruningbit(pbit)
-                # edge signature and sentence correspond to a state
-                dataset[i].append(((edge, sentence), r))
+                print("difference: %f" % (r[1] - r[0]))
+                stdout.flush()
+                # feature item and sentence correspond to a state
+                datasubset.append((fitem, r))
             # increase the denominator
             rewardsum += reward(weight, derivation_graph, tree)
         # train
-        policies[i+1] = train(dataset)
+        dataset.append(datasubset)
+        print("train...")
+        stdout.flush()
+        policies[i+1] = train(dataset, collector)
         rewards[i] = rewardsum / len(corpus)
+    print("chose policy...")
+    stdout.flush()
     maxidx = max(rewards, key=rewards.get)
     return policies[maxidx]
 
 
-def train(q):
+def train(q, collector):
     """Trains the pruning policy via dataset aggregation.
 
     Parameters
     ----------
-    q : dict(int, list(((Hyperedge, list(str)), dict(int, double))))
+    q : list(list((FeatureItem, dict(int, double))))
         The set of all state reward tuples.
+    collector : FeatureCollector
+        The feature collector.
 
     Returns
     -------
@@ -85,66 +117,20 @@ def train(q):
         The trained pruning policy.
 
     """
-    colnames = []
-    data = {}
-
-    # create raw data
-    for idx, states in q.items():
-        for (s, r) in states:
-            signature = list(s[0].get_signature())
-            lhs_cover = signature[0][0]
-            # split cover in continuous intervals
-            tmpprev = lhs_cover[0] - 1
-            tmpinterval = []
-            intervals = []
-            for pos in lhs_cover:
-                if pos == tmpprev + 1:
-                    tmpinterval.append(pos)
-                    tmpprev = pos
-                else:
-                    intervals.append(tmpinterval)
-                    tmpinterval = [pos]
-                    tmpprev = pos
-            intervals.append(tmpinterval)
-            # create sentence
-            subsent = [' '.join([s[1][i] for i in tmpi])
-                       for tmpi in intervals]
-            # colname is a policy item
-            subsent.append(s[0].get_nonterminal())
-            colname = tuple(subsent)
-            if colname not in colnames:
-                colnames.append(colname)
-            # fill the data
-            col = data.get(colname, [np.nan] * (len(q) + 1))
-            col[idx] = r[0] - r[1]
-            data[colname] = col
-
-    # create initial dataframe
-    df = DataFrame([[np.nan] * len(colnames)], columns=colnames)
-
-    # fill dataframe and interpolate
-    for idx in range(len(q)):
-        for colname in colnames:
-            tmp_value = data[colname][idx]
-            if not np.isnan(tmp_value):
-                df.at[idx, colname] = tmp_value
-        tmp_frame = DataFrame([[np.nan] * len(colnames)], columns=colnames)
-        df = df.append(tmp_frame, ignore_index=True)
-        # possible methods: barycentric, krogh, pchip,
-        # spline (order=1 or 3)
-        if idx == 0:
-            df = df.interpolate(method='linear')
-        else:
-            df = df.interpolate(method='spline', order=1)
-
-    print(str(df))
+    dataset = sum(q, []) if q else []
+    if not dataset:
+        ti, tr = [], []
+    else:
+        ti, tr = zip(*dataset)
+    data, rewards = list(ti), list(tr)
+    print("raw rewards: prune-keep tuples")
+    print(rewards)
     stdout.flush()
-    # collect data for new pruning policy
-    pp = PruningPolicy()
-    pp.mode = Mode.KEEPING
-    pp.contents = [i for i in colnames if df[i][len(q)] < 0]
-    print(str(pp.contents))
-    return pp
+    rewards = [r[1] - r[0] for r in rewards]
+    collector.drop_data()
+    collector.inject_data(data)
+    policy = collector.create_PruningPolicy(rewards)
+    return policy
 
 
 def reward(l, dg, gt):
@@ -166,7 +152,18 @@ def reward(l, dg, gt):
         The reward.
 
     """
-    return accuracy(dg.get_tree(), gt) - l * runtime(dg)
+    tree = dg.get_tree()
+    acc = accuracy(tree, gt)
+    if isinstance(tree, Tree):
+        print(tree.pprint())
+    else:
+        print(tree)
+    stdout.flush()
+    run = runtime(dg)
+    reward = (acc) / (l * run) if run != 0 else acc
+    print("\nreward: %f = %f / (%f * %i)" %
+          (reward, acc, l, run))
+    return reward
 
 
 def accuracy(dt, gt):

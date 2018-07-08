@@ -3,13 +3,20 @@
 
 ## Requirements
 The following packages have to be installed before using ltplcfrs:
-- [disco-dop](https://github.com/andreasvc/disco-dop) : libary for
+- [disco-dop](https://github.com/andreasvc/disco-dop) : library for
 discontinuous data oriented parsing
 - [pandas](https://pandas.pydata.org/) : used for dataset aggregation
 - [scipy](https://www.scipy.org/) : necessary for pandas interpolation
 
 
 ## Preparations
+Prepare the tiger corpus:
+```bash
+$ iconv -f <current encoding> -t UTF-8 <corpus-file> > <utf8-corpus-file>
+$ iconv -f ISO-8859-1 -t UTF-8 "path/to/corpus.xml" > "path/to/corpus.utf8.xml"
+```
+
+
 Usefull calls for building the project in the development phase:
 
 ```bash

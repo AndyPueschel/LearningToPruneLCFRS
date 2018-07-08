@@ -1,16 +1,17 @@
 """This module provides the command line interface for the other modules."""
 
-from sys import argv, stdin, stdout
+from sys import argv, stdin, stdout, maxsize
 from os.path import basename
 
-from discodop.tree import DrawTree, Tree
+from discodop.tree import DrawTree, Tree, ImmutableTree
 from discodop.treebank import TigerXMLCorpusReader
 from discodop.treetransforms import canonicalize
 
-from .pruningpolicy import PruningPolicy
+from .pruningpolicy import PruningPolicy, deserialize
 from .grammar import Grammar
 from .parse import Parser
 from .lols import accuracy, lols
+from .features import FEATURES
 
 
 def main():
@@ -50,13 +51,15 @@ def train(args, stdinput):
     # assign the parameter values
     pp = PruningPolicy(stdinput)
     corpus = TigerXMLCorpusReader(args[0], encoding='utf8')
-    iterations = int(args[1]) if len(args) >= 2 else 1
-    weight = float(args[2]) if len(args) >= 3 else 1
-    slength = int(args[3]) if len(args) >= 4 else None
-    nsents = int(args[4]) if len(args) >= 5 else None
+    iterations = int(args[1]) if len(args) >= 2 and args[1] else 1
+    weight = float(args[2]) if len(args) >= 3 and args[2] else 1
+    slength = int(args[3]) if len(args) >= 4 and args[3] else maxsize
+    nsents = int(args[4]) if len(args) >= 5 and args[4] else maxsize
+    feats = str(args[5]).split('-') if len(args) >= 6 else None
 
     # create grammar and corpus
-    trees = [canonicalize(t) for t in list(corpus.trees().values())]
+    trees = [ImmutableTree.convert(canonicalize(t))
+             for t in list(corpus.trees().values())]
     sentences = list(corpus.sents().values())
     grammar = Grammar(trees, sentences)
     simplecorpus = [(s, _t) for s, _t in list(zip(sentences, trees))
@@ -65,7 +68,9 @@ def train(args, stdinput):
         simplecorpus = simplecorpus[:nsents]
 
     # print the trained pruning policy into the console
-    stdout.write(str(lols(grammar, simplecorpus, pp, iterations, weight)))
+    # newpp = lols(grammar, simplecorpus, pp, iterations, weight, feats)
+    # stdout.write(str(newpp))
+    return lols(grammar, simplecorpus, pp, iterations, weight, feats)
 
 
 def parse(args, stdinput):
@@ -81,20 +86,23 @@ def parse(args, stdinput):
     """
 
     # assign the parameter values
-    pp = PruningPolicy(stdinput)
     corpus = TigerXMLCorpusReader(args[0], encoding='utf8')
     sent = args[1]
 
     # create grammar and gold trees
-    trees = [canonicalize(t) for t in list(corpus.trees().values())]
+    trees = [ImmutableTree.convert(canonicalize(t))
+             for t in list(corpus.trees().values())]
     sentences = list(corpus.sents().values())
     grammar = Grammar(trees, sentences)
     goldtrees = [t for s, t in zip(sentences, trees) if ' '.join(s) == sent]
 
+    # create initial pruning policy
+    pp = deserialize(stdinput, FEATURES, grammar) if\
+        stdinput else PruningPolicy()
+
     # create derivation tree
     parser = Parser(grammar)
     derivationgraph = parser.parse(sent, pp)
-    print("leaves:")
     derivationtree = derivationgraph.get_tree()
     stdout.flush()
 
@@ -136,38 +144,43 @@ COMMANDS = {
             'train': {'cmd': train,
                       'minargs': 1,
                       'maxargs': 5,
-                      'help': "train: trains a pruning policy and returns it" +
-                              " via std out. \n" +
-                              "       Usage: <pp> | train <corpus-file>" +
-                              " [<i>, <w>, <l>, <n>] \n" +
-                              "       <pp>: initial pruning policy via" +
-                              " stdin \n" +
-                              "       <corpus-file>: the file path to the" +
-                              " corpus \n" +
-                              "       <i>: the number of iterations \n" +
-                              "       <w>: the accuracy-runtime trade off \n" +
-                              "       <l>: the maximum sentence length \n" +
-                              "       <n>: the maximum number of sentences \n",
+                      'help': ("train: trains a pruning policy and returns it"
+                               " via std out. \n"
+                               "       Usage: <pp> | train <corpus-file>"
+                               " [<i>, <w>, <l>, <n>, <f>] \n"
+                               "       <pp>: initial pruning policy via"
+                               " stdin \n"
+                               "       <corpus-file>: the file path to the"
+                               " corpus \n"
+                               "       <i>: the number of iterations \n"
+                               "       <w>: the accuracy-runtime trade off \n"
+                               "       <l>: the maximum sentence length \n"
+                               "       <n>: the maximum number of sentences \n"
+                               "       <f>: the by '-' seperated features"
+                               " such as l, sl, bw, bwc, ..."
+                               ),
                       'short': "<pp> | train <corpus-file> [<i>, <w>] \n"},
             'parse': {'cmd': parse,
                       'minargs': 2,
                       'maxargs': 2,
-                      'help': "parse: parses a sentence and returns the" +
-                              " parse tree and recall. \n" +
-                              "       Usage: <pp> | parse <corpus-file>" +
-                              " <s> \n" +
-                              "       <pp> the pruning policy via stdin \n" +
-                              "       <corpus-file>: the file path to the" +
-                              " corpus \n" +
-                              "       <s>: the sentence to parse \n",
+                      'help': ("parse: parses a sentence and returns the"
+                               " parse tree and recall. \n"
+                               "       Usage: <pp> | parse <corpus-file>"
+                               " <s> \n"
+                               "       <pp> the pruning policy via stdin \n"
+                               "       <corpus-file>: the file path to the"
+                               " corpus \n"
+                               "       <s>: the sentence to parse \n"
+                               ),
                       'short': "<pp> | parse <corpus-file> <s>"},
             'help': {'cmd': help,
                      'minargs': 0,
-                     'maxargs': 0,
-                     'help': "help: shows information for commands. \n" +
-                             "      Usage: <cmd> help \n" +
-                             "      <cmd>: the command you want information" +
-                             " aboout \n",
+                     'maxargs': 1,
+                     'help': ("help: shows information for commands. \n"
+                              "      Usage: <cmd> help \n"
+                              "      <cmd>: the command you want information"
+                              " aboout \n"
+                              ),
                      'short': "<cmd> help"}
             }
 

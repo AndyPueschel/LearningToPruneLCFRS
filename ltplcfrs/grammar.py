@@ -1,7 +1,11 @@
 """This module contains the Grammar class for initializing a grammar
 and further functions to operate on rules."""
 
+import sys
+
 from discodop.grammar import treebankgrammar
+from discodop.treetransforms import fanout
+from discodop.tree import ImmutableTree
 
 
 class Grammar(object):
@@ -28,7 +32,7 @@ class Grammar(object):
         ----------
         trees: list(Tree)
             The list of gold trees.
-        sentences: list(str)
+        sentences: list(list(str))
             The list of sentences.
 
         The rules in the grammar have the following form:
@@ -38,6 +42,21 @@ class Grammar(object):
         """
         # creating basic rules
         rules = treebankgrammar(trees, sentences)
+
+        # creating general grammar info
+        self.max_fanout = 1
+        self.max_length = 0
+        self.min_length = sys.maxsize
+        for tree, sent in zip(trees, sentences):
+            fanout_tree = fanout(tree)
+            length_sent = len(sent)
+            if fanout_tree > self.max_fanout and\
+               isinstance(tree, ImmutableTree):
+                self.max_fanout = fanout_tree
+            if length_sent > self.max_length:
+                self.max_length = length_sent
+            if length_sent < self.min_length:
+                self.min_length = length_sent
 
         # calculating relative frequencies
         trules = []
@@ -135,14 +154,14 @@ class Rule(object):
         if not isinstance(discodop_rule, tuple):
             self.lhs = "None"
             self.rhs = []
-            self.prob = (0, 1)
+            self.__prob = (0, 1)
             self.yf = tuple(())
         else:
             # p has the form (numerator, denominator)
             (nts, yf), p = discodop_rule
             self.lhs = nts[0]
             self.rhs = list(nts[1:])
-            self.prob = p
+            self.__prob = p
             self.yf = yf
 
     def get_prob(self):
@@ -154,7 +173,7 @@ class Rule(object):
             The probability (weight) of the rule.
 
         """
-        return float(self.prob[0] / self.prob[1])
+        return float(self.__prob[0] / self.__prob[1])
 
     def __str__(self):
         """Return the string representation.

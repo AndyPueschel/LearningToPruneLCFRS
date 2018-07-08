@@ -3,12 +3,12 @@ grammar and pruning policy."""
 
 from itertools import product, dropwhile
 from operator import itemgetter
-from sys import stdout
 
 from discodop.tree import escape
 
 from .hypergraph import Hypergraph, Hyperedge, Hypernode
 from .pruningpolicy import PruningPolicy
+from .features import FeatureItem
 
 
 class Parser(object):
@@ -52,8 +52,6 @@ class Parser(object):
         hg = Hypergraph(sentence)
         slist = list(map(lambda s: escape(s), sentence.split()))
         agenda = []  # 'queue' of hyperedges
-        newagenda = []  # new items will be added to this 'queue'
-        preagenda = []  # contains items from the last 'queue'
         visited = []  # remembers already visited items
 
         # create leaves in derivation graph.
@@ -65,161 +63,202 @@ class Parser(object):
                 p = rule.get_prob()
                 node = hg.get_nodes()[pos]
                 edge = Hyperedge(nt, p, 1, node)
+                visited.append(edge.get_signature())
                 agenda.append(edge)
 
         # create the other items for derivation graph.
         while agenda:
             item = agenda.pop(0)
-            if item.get_signature() in visited:
-                continue
             hg.add_edge(item)
-            preagenda.append(item)
-            visited.append(item.get_signature())
-            print("item: %s # restitems: %i" %
-                  (str(item.get_signature()), len(agenda)))
-            stdout.flush()
+
             # set of (cover, nonterminal) tuples
             tmpnodes = [(c.get_predecessor().get_label(), c.get_nonterminal())
-                        for c in hg.get_edges() if c not in preagenda]
+                        for c in hg.get_edges()]
             tmpitem = (item.get_predecessor().get_label(),
                        item.get_nonterminal())
             tmpnodes.append(tmpitem)
             nodes = set(tmpnodes)
+            citem = (item.get_nonterminal(),
+                     item.get_predecessor().get_label())
 
             # regarding continuous rules
             for crule in self.grammar.get_continuousrules():
+
                 # create constituents according to the arity of the rule
                 constituents = []
                 for idx in range(len(crule.rhs)):
                     constituents.append(
                         [c for c, n in nodes if n == crule.rhs[idx]]
                     )
-                pairs = list(product(*constituents))
-                for pair in pairs:
-                    cover = [pos for cs in pair for pos in cs]
-                    cover.sort()
-                    # cover must not be empty
-                    if not cover:
-                        continue
-                    # positions should be disjoint
-                    if len(cover) != len(set(cover)):
-                        continue
-                    # cover should be continuous
-                    if max(cover) - min(cover) + 1 != len(cover):
+
+                # iterate through every (cover_1, ..., cover_n) pair
+                for pair in list(product(*constituents)):
+
+                    # create feature item
+                    fitem = FeatureItem(crule.lhs,
+                                        list(zip(crule.rhs, list(pair))),
+                                        slist)
+
+                    # validations
+                    if not validate_elem(fitem, citem) or\
+                       not validate_cover(fitem) or\
+                       not validate_continuity(fitem) or\
+                       not validate_continuous_run(fitem, crule):
                         continue
                     # check whether the current item should be pruned
-                    subsent = ' '.join([slist[i] for i in cover])
-                    if pp.ispruned((subsent, crule.lhs)):
-                        continue
-                    # validate the yield function of the rule
-                    interval = [(idx, n)
-                                for n, t in enumerate(list(pair))
-                                for idx in t]
-                    interval.sort(key=itemgetter(0))
-                    run = []
-                    for child in crule.yf[0]:
-                        if interval:
-                            run.append(interval[0][1])
-                        interval =\
-                            list(dropwhile(lambda x: x[1] == child, interval))
-                    # if yf is valid, the run equals the yield function
-                    if tuple(run) != crule.yf[0]:
+                    if pp.ispruned(fitem):
                         continue
 
                     # add hypernode to hypergraph
-                    label = tuple(cover)
-                    if not (label in hg.get_nodes()):
-                        hg.add_node(Hypernode(label))
-                    node = hg.get_nodes()[label]
-                    # create new hyperedge
+                    if not (fitem.cover in hg.get_nodes()):
+                        hg.add_node(Hypernode(fitem.cover))
+                    node = hg.get_nodes()[fitem.cover]
+
+                    # create signature
                     succs = list(map(lambda x: hg.get_nodes()[x], list(pair)))
-                    he = Hyperedge(
-                            crule.lhs, crule.get_prob(),
-                            1, node, list(zip(succs, crule.rhs))
-                            )
-                    # enqueue the new item if not already visited
-                    if not he.get_signature() in visited:
-                        newagenda.append(he)
+                    sign = [(node.get_label(), crule.lhs)]
+                    sign_rhs = list(zip(map(Hypernode.get_label, succs),
+                                        crule.rhs))
+                    sign.extend(sign_rhs)
+                    sign = tuple(sign)
+
+                    # create and enqueue the new item if not already visited
+                    if sign not in visited:
+                        he = Hyperedge(
+                                crule.lhs, crule.get_prob(),
+                                1, node, list(zip(succs, crule.rhs))
+                                )
+                        visited.append(he.get_signature())
+                        agenda.append(he)
 
             # regarding discontinuous rules
             for drule in self.grammar.get_discontinuousrules():
+
                 # create constituents according to the arity of the rule
                 constituents = []
                 for idx in range(len(drule.rhs)):
                     constituents.append(
                         [c for c, n in nodes if n == drule.rhs[idx]]
                     )
-                for pair in product(*constituents):
+
+                # iterate through every (cover_1, ..., cover_n) pair
+                for pair in list(product(*constituents)):
                     cover = [pos for cs in list(pair) for pos in cs]
                     cover.sort()
-                    # cover must not be empty
-                    if not cover:
-                        continue
-                    # positions should be disjoint
-                    if len(cover) != len(set(cover)):
-                        continue
-                    # cover should be discontinuous
-                    if max(cover) - min(cover) + 1 <= len(cover):
-                        continue
-                    # split cover in continuous intervals
-                    tmpprev = cover[0] - 1
-                    tmpinterval = []
-                    tmpcover = [(idx, n)
-                                for n, t in enumerate(list(pair))
-                                for idx in t]
-                    tmpcover.sort(key=itemgetter(0))
-                    intervals = []
-                    for pos, c in tmpcover:
-                        if pos == tmpprev + 1:
-                            tmpinterval.append((pos, c))
-                        else:
-                            intervals.append(tmpinterval)
-                            tmpinterval = [(pos, c)]
-                        tmpprev = pos
-                    intervals.append(tmpinterval)
-                    # number of intervals must match the intervals in yf
-                    if len(intervals) != len(drule.yf):
+
+                    # create feature item
+                    fitem = FeatureItem(drule.lhs,
+                                        list(zip(drule.rhs, list(pair))),
+                                        slist)
+
+                    # validations
+                    if not validate_elem(fitem, citem) or\
+                       not validate_cover(fitem) or\
+                       not validate_discontinuous_run(fitem, drule):
                         continue
                     # check whether the current item should be pruned
-                    subsent = [' '.join([slist[i[0]] for i in tmpi])
-                               for tmpi in intervals]
-                    subsent.extend([drule.lhs])
-                    if pp.ispruned(tuple(subsent)):
-                        continue
-                    # validate the yield function of the rule
-                    run = []
-                    for csid in range(len(drule.yf)):
-                        subrun = []
-                        for child in drule.yf[csid]:
-                            if tmpcover:
-                                subrun.append(tmpcover[0][1])
-                            tmpcover =\
-                                list(dropwhile(lambda x: x[1] == child,
-                                               tmpcover))
-                        run.append(tuple(subrun))
-                    # if yf is valid, the run equals the yield function
-                    if tuple(run) != drule.yf:
+                    if pp.ispruned(fitem):
                         continue
 
                     # add hypernode to hypergraph
-                    label = tuple(cover)
-                    if not (label in hg.get_nodes()):
-                        hg.add_node(Hypernode(label))
-                    node = hg.get_nodes()[label]
-                    # create new hyperedge
+                    if not (fitem.cover in hg.get_nodes()):
+                        hg.add_node(Hypernode(fitem.cover))
+                    node = hg.get_nodes()[fitem.cover]
+
+                    # create signature
                     succs = list(map(lambda x: hg.get_nodes()[x], list(pair)))
-                    he = Hyperedge(
-                            drule.lhs, drule.get_prob(),
-                            1, node, list(zip(succs, drule.rhs))
-                            )
-                    # enqueue the new item if not already visited
-                    if he.get_signature() in visited:
-                        newagenda.append(he)
-            if not agenda:
-                preagenda = []
-                agenda = list(newagenda)
-                newagenda = []
+                    sign = [(node.get_label(), crule.lhs)]
+                    sign_rhs = list(zip(map(Hypernode.get_label, succs),
+                                        crule.rhs))
+                    sign.extend(sign_rhs)
+                    sign = tuple(sign)
+
+                    # create and enqueue the new item if not already visited
+                    if sign not in visited:
+                        he = Hyperedge(
+                                drule.lhs, drule.get_prob(),
+                                1, node, list(zip(succs, drule.rhs))
+                                )
+                        visited.append(he.get_signature())
+                        agenda.append(he)
         return hg
+
+
+def validate_cover(fitem):
+    if not fitem.cover:
+        return False
+    if len(fitem.cover) != len(set(fitem.cover)):
+        return False
+    else:
+        return True
+
+
+def validate_continuity(fitem):
+    if max(fitem.cover) - min(fitem.cover) + 1 != len(fitem.cover):
+        return False
+    else:
+        return True
+
+
+def validate_continuous_run(fitem, crule):
+    interval = [(idx, n)
+                for n, t in enumerate([c for _n, c in fitem.rhs])
+                for idx in t]
+    interval.sort(key=itemgetter(0))
+    run = []
+    for child in crule.yf[0]:
+        if interval:
+            run.append(interval[0][1])
+        interval =\
+            list(dropwhile(lambda x: x[1] == child, interval))
+    # if yf is valid, the run equals the yield function
+    if tuple(run) != crule.yf[0]:
+        return False
+    else:
+        return True
+
+
+def validate_discontinuous_run(fitem, drule):
+    tmpcover = [(idx, n)
+                for n, t in enumerate([c for _n, c in fitem.rhs])
+                for idx in t]
+    tmpcover.sort(key=itemgetter(0))
+    # create interval of subintervals
+    tmpprev = fitem.cover[0] - 1
+    tmpinterval = []
+    intervals = []
+    for pos, c in tmpcover:
+        if pos == tmpprev + 1:
+            tmpinterval.append((pos, c))
+        else:
+            intervals.append(tmpinterval)
+            tmpinterval = [(pos, c)]
+        tmpprev = pos
+    intervals.append(tmpinterval)
+    # number of intervals must match the intervals in yf
+    if len(intervals) != len(drule.yf):
+        return False
+    # validate the yield function of the rule
+    run = []
+    for csid in range(len(drule.yf)):
+        subrun = []
+        for child in drule.yf[csid]:
+            if tmpcover:
+                subrun.append(tmpcover[0][1])
+            tmpcover = list(dropwhile(lambda x: x[1] == child, tmpcover))
+        run.append(tuple(subrun))
+    # if yf is valid, the run equals the yield function
+    if tuple(run) != drule.yf:
+        return False
+    else:
+        return True
+
+
+def validate_elem(fitem, citem):
+    if citem not in fitem.rhs:
+        return False
+    else:
+        return True
 
 
 __all__ = ['Parser']
