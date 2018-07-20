@@ -1,7 +1,6 @@
 """This module contains the pruning policy and its needed subfunction
 deserialize."""
 
-import time
 import pickle
 import pandas as pd
 import numpy as np
@@ -111,17 +110,9 @@ class PruningPolicy(object):
             return False
         else:
             sdf = handle_item(item, self.__feats)
-            time_enc = time.time()
             encoder = ce.OneHotEncoder(cols=list(self.__df))
-            time_fit = time.time()
             encoder.fit_transform(self.__df)
-            time_predict = time.time()
             cell = self.__model.predict(X=encoder.transform(sdf))
-            time_end = time.time()
-            print("encoding: %f - fitting: %f - predicting: %f" %
-                  (time_fit - time_enc,
-                   time_predict - time_fit,
-                   time_end - time_predict))
             # reward(keep) - reward(prune) = cell[0]
             if cell[0] < 0:
                 return True

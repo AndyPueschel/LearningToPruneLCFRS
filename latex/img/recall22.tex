@@ -1,0 +1,12 @@
+\begin{tikzpicture}
+	%nodes
+	\node[name=S, circle, fill=Gold]{S};
+	\node[name=CNP, circle, fill=Orchid, below left=of S]{CNP};
+	\node[name=NP, circle, fill=Gold, below right=of S]{NP};
+	\node[name=PP, circle, fill=Gold, below=of NP]{PP};
+	%path
+	\path
+		(S) edge (CNP)
+		(S) edge (NP)
+		(NP) edge (PP);
+\end{tikzpicture}

@@ -4,9 +4,18 @@ data/*
 !data/tiger.1-1000.utf8.xml
 
 # documentation and material
-latex
+latex/src/*
+!latex/src/Learning_to_Prune.tex
+!latex/src/Learning_to_Prune.slides.tex
 docs
 material
+
+# policies
+!data/policy.1.txt
+!data/policy.01.txt
+!data/policy.001.txt
+!data/policy.0001.txt
+!data/policy.00001.txt
 
 # platform dependencies
 .idea

@@ -1,0 +1,72 @@
+<diagram program="umletino" version="14.2"><zoom_level>10</zoom_level><help_text>SimpleClasse 1for diagram notes</help_text><element><id>UMLUseCase</id><coordinates><x>690</x><y>100</y><w>120</w><h>40</h></coordinates><panel_attributes>{1, 2, 3, 4, 5}
+bg=orange</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>240</x><y>800</y><w>40</w><h>30</h></coordinates><panel_attributes>1; 1
+bg=green</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLUseCase</id><coordinates><x>920</x><y>710</y><w>120</w><h>40</h></coordinates><panel_attributes>{4}
+bg=orange</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLUseCase</id><coordinates><x>690</x><y>280</y><w>120</w><h>40</h></coordinates><panel_attributes>{1, 2, 3 , 4}
+bg=orange</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLUseCase</id><coordinates><x>320</x><y>460</y><w>120</w><h>40</h></coordinates><panel_attributes>{1, 2, 4}
+bg=orange</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLUseCase</id><coordinates><x>200</x><y>710</y><w>120</w><h>40</h></coordinates><panel_attributes>{1}
+bg=orange</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLUseCase</id><coordinates><x>440</x><y>710</y><w>120</w><h>40</h></coordinates><panel_attributes>{2}
+bg=orange</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLUseCase</id><coordinates><x>920</x><y>450</y><w>120</w><h>40</h></coordinates><panel_attributes>{2, 3, 4}
+bg=orange</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLUseCase</id><coordinates><x>690</x><y>710</y><w>120</w><h>40</h></coordinates><panel_attributes>{3}
+bg=orange</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLUseCase</id><coordinates><x>1150</x><y>710</y><w>120</w><h>40</h></coordinates><panel_attributes>{5}
+bg=orange</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>730</x><y>800</y><w>40</w><h>30</h></coordinates><panel_attributes>1; 1
+bg=green</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>480</x><y>800</y><w>40</w><h>30</h></coordinates><panel_attributes>0,25;1
+bg=green</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>420</x><y>800</y><w>40</w><h>30</h></coordinates><panel_attributes>0,5; 1
+bg=green</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>540</x><y>800</y><w>40</w><h>30</h></coordinates><panel_attributes>0,25; 1
+bg=green</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>960</x><y>800</y><w>40</w><h>30</h></coordinates><panel_attributes>1; 1
+bg=green</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>1190</x><y>800</y><w>40</w><h>30</h></coordinates><panel_attributes>1; 1
+bg=green</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>250</x><y>740</y><w>50</w><h>80</h></coordinates><panel_attributes>lt=&lt;-
+r1=ADV</panel_attributes><additional_attributes>10;10;10;60</additional_attributes></element><element><id>Relation</id><coordinates><x>430</x><y>730</y><w>70</w><h>90</h></coordinates><panel_attributes>lt=&lt;-
+r1=VAFIN</panel_attributes><additional_attributes>20;10;10;70</additional_attributes></element><element><id>Relation</id><coordinates><x>490</x><y>740</y><w>60</w><h>80</h></coordinates><panel_attributes>lt=&lt;-
+r1=VAINF</panel_attributes><additional_attributes>10;10;10;60</additional_attributes></element><element><id>Relation</id><coordinates><x>540</x><y>730</y><w>70</w><h>90</h></coordinates><panel_attributes>lt=&lt;-
+r1=VVINF</panel_attributes><additional_attributes>10;10;20;70</additional_attributes></element><element><id>Relation</id><coordinates><x>740</x><y>740</y><w>60</w><h>80</h></coordinates><panel_attributes>lt=&lt;-
+r1=PPER</panel_attributes><additional_attributes>10;10;10;60</additional_attributes></element><element><id>Relation</id><coordinates><x>970</x><y>740</y><w>60</w><h>80</h></coordinates><panel_attributes>lt=&lt;-
+r1=VVPP</panel_attributes><additional_attributes>10;10;10;60</additional_attributes></element><element><id>Relation</id><coordinates><x>1200</x><y>740</y><w>40</w><h>80</h></coordinates><panel_attributes>lt=&lt;-
+r1=$</panel_attributes><additional_attributes>10;10;10;60</additional_attributes></element><element><id>UMLClass</id><coordinates><x>730</x><y>620</y><w>40</w><h>30</h></coordinates><panel_attributes>0,5; 1
+bg=green</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>250</x><y>620</y><w>500</w><h>110</h></coordinates><panel_attributes>lt=-
+r1=ADV</panel_attributes><additional_attributes>480;20;10;90</additional_attributes></element><element><id>Relation</id><coordinates><x>760</x><y>620</y><w>220</w><h>110</h></coordinates><panel_attributes>lt=-
+r1=VVP</panel_attributes><additional_attributes>10;20;200;90</additional_attributes></element><element><id>Relation</id><coordinates><x>740</x><y>550</y><w>40</w><h>90</h></coordinates><panel_attributes>lt=&lt;-
+r1=VP</panel_attributes><additional_attributes>10;10;10;70</additional_attributes></element><element><id>UMLClass</id><coordinates><x>960</x><y>570</y><w>40</w><h>30</h></coordinates><panel_attributes>0,25; 1
+bg=green</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>550</x><y>580</y><w>440</w><h>170</h></coordinates><panel_attributes>lt=-
+r1=VAFIN</panel_attributes><additional_attributes>420;20;10;150</additional_attributes></element><element><id>UMLUseCase</id><coordinates><x>690</x><y>520</y><w>120</w><h>40</h></coordinates><panel_attributes>{1, 4}
+bg=orange</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>790</x><y>590</y><w>210</w><h>150</h></coordinates><panel_attributes>lt=-
+r1=PPER
+r1pos=20,25</panel_attributes><additional_attributes>190;10;10;130</additional_attributes></element><element><id>Relation</id><coordinates><x>980</x><y>590</y><w>60</w><h>140</h></coordinates><panel_attributes>lt=-
+r1=VVPP</panel_attributes><additional_attributes>10;10;10;120</additional_attributes></element><element><id>Relation</id><coordinates><x>970</x><y>480</y><w>40</w><h>110</h></coordinates><panel_attributes>lt=&lt;-
+r2=S</panel_attributes><additional_attributes>10;10;10;90</additional_attributes></element><element><id>UMLClass</id><coordinates><x>730</x><y>380</y><w>40</w><h>30</h></coordinates><panel_attributes>0,5;1
+bg=green</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>740</x><y>310</y><w>40</w><h>90</h></coordinates><panel_attributes>lt=&lt;-
+r1=S</panel_attributes><additional_attributes>10;10;10;70</additional_attributes></element><element><id>Relation</id><coordinates><x>740</x><y>400</y><w>40</w><h>140</h></coordinates><panel_attributes>lt=-
+r1=VP</panel_attributes><additional_attributes>10;10;10;120</additional_attributes></element><element><id>Relation</id><coordinates><x>510</x><y>400</y><w>250</w><h>330</h></coordinates><panel_attributes>lt=-
+r1=VAFIN
+r1pos=-17,7</panel_attributes><additional_attributes>220;10;10;310</additional_attributes></element><element><id>Relation</id><coordinates><x>760</x><y>400</y><w>100</w><h>330</h></coordinates><panel_attributes>lt=-
+r1=PPER
+r1pos=25,5</panel_attributes><additional_attributes>10;10;70;90;70;220;10;310</additional_attributes></element><element><id>UMLClass</id><coordinates><x>740</x><y>190</y><w>30</w><h>30</h></coordinates><panel_attributes>1; 1
+bg=green</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>740</x><y>130</y><w>70</w><h>80</h></coordinates><panel_attributes>lt=&lt;-
+r2=VROOT</panel_attributes><additional_attributes>10;10;10;60</additional_attributes></element><element><id>Relation</id><coordinates><x>740</x><y>210</y><w>40</w><h>90</h></coordinates><panel_attributes>lt=-
+r2=S
+r2pos=5,5</panel_attributes><additional_attributes>10;10;10;70</additional_attributes></element><element><id>Relation</id><coordinates><x>760</x><y>210</y><w>470</w><h>520</h></coordinates><panel_attributes>lt=-
+r1=$</panel_attributes><additional_attributes>10;10;330;220;450;500</additional_attributes></element><element><id>UMLClass</id><coordinates><x>480</x><y>530</y><w>40</w><h>30</h></coordinates><panel_attributes>0,25; 1
+bg=green</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>370</x><y>490</y><w>130</w><h>60</h></coordinates><panel_attributes>lt=&lt;-
+r2=S</panel_attributes><additional_attributes>10;10;110;40</additional_attributes></element><element><id>Relation</id><coordinates><x>510</x><y>520</y><w>200</w><h>40</h></coordinates><panel_attributes>lt=-
+r1=VP</panel_attributes><additional_attributes>10;20;180;20</additional_attributes></element><element><id>Relation</id><coordinates><x>490</x><y>550</y><w>60</w><h>180</h></coordinates><panel_attributes>lt=-
+r1=VAINF</panel_attributes><additional_attributes>10;10;10;160</additional_attributes></element><element><id>UMLClass</id><coordinates><x>540</x><y>350</y><w>40</w><h>30</h></coordinates><panel_attributes>0,25; 1
+bg=#ff6347</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>570</x><y>290</y><w>140</w><h>80</h></coordinates><panel_attributes>lt=&lt;-
+r2=S</panel_attributes><additional_attributes>120;10;10;60</additional_attributes></element><element><id>Relation</id><coordinates><x>420</x><y>370</y><w>150</w><h>120</h></coordinates><panel_attributes>lt=-
+r1=S</panel_attributes><additional_attributes>130;10;10;100</additional_attributes></element><element><id>Relation</id><coordinates><x>560</x><y>370</y><w>160</w><h>370</h></coordinates><panel_attributes>lt=-
+r1=PPER
+r1pos=10,-10</panel_attributes><additional_attributes>10;10;140;350</additional_attributes></element><element><id>UMLNote</id><coordinates><x>1250</x><y>700</y><w>60</w><h>30</h></coordinates><panel_attributes>$: 1
+bg=#f6e0b8</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLNote</id><coordinates><x>1010</x><y>700</y><w>70</w><h>30</h></coordinates><panel_attributes>VVPP: 1
+bg=#f6e0b8</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLNote</id><coordinates><x>790</x><y>700</y><w>70</w><h>30</h></coordinates><panel_attributes>PPER: 1
+bg=#f6e0b8</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLNote</id><coordinates><x>540</x><y>670</y><w>80</w><h>60</h></coordinates><panel_attributes>VAFIN: 0,5
+VAINF: 0,25
+VVINF: 0,25
+bg=#f6e0b8</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLNote</id><coordinates><x>300</x><y>700</y><w>60</w><h>30</h></coordinates><panel_attributes>ADV: 1
+bg=#f6e0b8</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLNote</id><coordinates><x>1020</x><y>440</y><w>70</w><h>30</h></coordinates><panel_attributes>S: 0,125
+bg=#f6e0b8</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLNote</id><coordinates><x>780</x><y>510</y><w>60</w><h>30</h></coordinates><panel_attributes>VP: 0,5
+bg=#f6e0b8</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLNote</id><coordinates><x>420</x><y>450</y><w>70</w><h>30</h></coordinates><panel_attributes>S: 0,125
+bg=#f6e0b8</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLNote</id><coordinates><x>790</x><y>230</y><w>130</w><h>70</h></coordinates><panel_attributes>S: 0,125 for
+S -&gt; VP VAFIN PPER
+S: 0,03125 for
+S -&gt; S PPER
+bg=#f6e0b8</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLNote</id><coordinates><x>790</x><y>80</y><w>110</w><h>40</h></coordinates><panel_attributes>VROOT: 0,125
+VROOT: 0,03125
+bg=#f6e0b8</panel_attributes><additional_attributes></additional_attributes></element></diagram>

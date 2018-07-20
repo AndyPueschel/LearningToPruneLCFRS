@@ -107,13 +107,10 @@ class Hypergraph(object):
             The highest scoring derivation tree.
 
         """
-        print("\ncreate tree...")
         root = tuple(range(len(self.sentence)))
         if root in self.nodes:
             node = self.nodes[root]
             if node.get_witnesses():
-                print("possible witnesses:")
-                print(node.get_witnesses())
                 maxvalue = ("None", (None, 0))
                 for k, v in node.get_witnesses().items():
                     if maxvalue[1][1] < v[1]:
@@ -259,7 +256,6 @@ class Hyperedge(object):
             raise ValueError("invalid input: %f - use 0 or 1 instead" % pb)
         else:
             self.pruningbit = pb
-            print("set pruning bit for %s to: %i" % (str(self), pb))
         # change propagation.
         updated = []  # list of already updated node-nonterminal tuples
         q = Queue()  # queue of (node, nonterminal) tuples
@@ -269,37 +265,14 @@ class Hyperedge(object):
             # check whether the item is already updated
             if (tmp_node, tmp_nt) in updated:
                 continue
-            print("ingoing edges: %s" %
-                  str(["(%s, %s) -> %s" %
-                      (ie.get_nonterminal(),
-                       ie.get_predecessor().get_label(),
-                       " ".join(["(%s, %s)" % (nt, str(n.get_label()))
-                                for n, nt in ie.get_successors()])
-                       )
-                      for ie in tmp_node.get_ins()])
-                  )
-            print("\nold witnesses for %s: %s" %
-                  (str(tmp_node.get_label()), str(tmp_node.witness)))
             updated.append((tmp_node, tmp_nt))
             # check whether the change will propagate to the upper nodes
             old_prob = tmp_node.get_witness(tmp_nt)[1]
-            print("old prob for %s: %f" %
-                  (str(tmp_node.get_witness(tmp_nt)[0]), old_prob))
             tmp_node.update_witness(tmp_nt)
             new_prob = tmp_node.get_witness(tmp_nt)[1]
-            print("new witnesses for %s: %s" %
-                  (str(tmp_node.get_label()), str(tmp_node.witness)))
-            print("new prob for %s: %f" %
-                  (str(tmp_node.get_witness(tmp_nt)[0]), new_prob))
             if old_prob == new_prob:
                 continue
             # propagate change to the upper nodes
-            print("outgoing edges: %s" %
-                  str(["%s:%s -> %s" %
-                      (oe.get_nonterminal(),
-                       str(oe.get_predecessor().get_label()),
-                       " ".join([n for _e, n in oe.get_successors()])
-                       ) for oe in tmp_node.get_outs()]))
             for out_edge in tmp_node.get_outs():
                 pre_node = out_edge.get_predecessor()
                 pre_nt = out_edge.get_nonterminal()
@@ -522,8 +495,6 @@ class Hypernode(object):
             return Tree(edge.get_nonterminal(), [self.get_label()[0]])
         else:
             s = edge.get_successors()
-            print("successors of %s:" % edge.get_nonterminal())
-            print(s)
             return Tree(edge.get_nonterminal(),
                         [t.get_subtree(n) for t, n in s])
 

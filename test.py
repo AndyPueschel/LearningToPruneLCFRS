@@ -1,7 +1,7 @@
 from ltplcfrs.cli import parse, train
 from ltplcfrs.grammar import Grammar
 from ltplcfrs.parse import Parser
-from ltplcfrs.pruningpolicy import deserialize
+# from ltplcfrs.pruningpolicy import deserialize
 
 from discodop.treebank import TigerXMLCorpusReader
 
@@ -12,25 +12,21 @@ def test_parse_read():
     ppfile.close()
     file = "data/tiger.1-1000.xml"
     # sent = "Was bewirkt Ihrer Ansicht nach ein solches Verhalten ?"
-    # sent = "Nun werden sie umworben ."
-    sent = ("Das macht den Unterschied aus zwischen den Republikaner-Erfolgen "
-            "heute und den alten NPD-Erfolgen .")
+    sent = "Nun werden sie umworben ."
     parse([file, sent], pp)
 
 
 def test_parse():
     file = "data/tiger.1-1000.utf8.xml"
     # sent = "Was bewirkt Ihrer Ansicht nach ein solches Verhalten ?"
-    # sent = "Nun werden sie umworben ."
-    sent = ("Das macht den Unterschied aus zwischen den Republikaner-Erfolgen "
-            "heute und den alten NPD-Erfolgen .")
+    sent = "Nun werden sie umworben ."
     parse([file, sent], None)
 
 
 def test_train():
     file = "data/tiger.1-1000.utf8.xml"
     iterations = 3
-    weigth = 0.001
+    weigth = 0.0001
     slength = 5
     snumber = None
     pp = train([file, iterations, weigth, slength, snumber], None)
@@ -57,7 +53,7 @@ def test_graph():
 
 
 if __name__ == '__main__':
-    test_parse()
+    test_train()
 
 
 __all_ = ['test_parse', 'test_graph']

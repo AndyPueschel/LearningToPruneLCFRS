@@ -1,0 +1,355 @@
+\RequirePackage{fix-tudscrfonts} 
+\documentclass[ddcfooter, noheader, nototalpages, nosectionnum, svgnames]{tudbeamer}
+
+%Sprache
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+
+%Diagramme + Grafiken
+\usepackage{tabularx}
+\usepackage{tikz}
+\usetikzlibrary{automata, arrows, positioning, matrix, calc, arrows}
+\usepackage{subfig}
+
+%Mathesymbole
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{amsmath}
+\usepackage{stmaryrd}
+
+%Operatoren
+\DeclareMathOperator*{\argmax}{argmax}
+\DeclareMathOperator*{\argmin}{argmin}
+
+%Algorithmus
+\usepackage{algorithm}
+\usepackage{algorithmicx}
+\usepackage{algpseudocode}
+
+%Literatur
+\usepackage[backend=biber, style=alphabetic]{biblatex}
+\usepackage{csquotes}
+\bibliography{../bib/literatur}
+
+%title page
+\title{Learning Pruning Policies for Linear Context-free Rewriting Systems}
+\subtitle{INF-PM-FPG}
+\author{Andy Püschel}
+\date{\today}
+\einrichtung{Faculty of Computer Science}
+\institut{Theoretical Computer Science}
+\professur{Chair of Foundations of Programming}
+
+\begin{document}
+
+\setbeamercovered{invisible}
+\maketitle
+
+\begin{frame}
+	\frametitle{Motivation}
+	Example:
+	\begin{itemize}
+		\item Weighted Deductive Parsing for LCFRS
+		\item Sentence
+			$w =$ Nun werden sie umworben .
+		\item Parser computes the highest scoring derivation $\hat{d}$
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Linear Context-free Rewriting System}
+	\begin{definition}
+		A \emph{linear context-free rewriting system} is a tuple
+		$G =(N, \Sigma, \Xi, P, S)$ where
+		\begin{itemize}
+			\item $N$ is a finite nonempty $\mathbb{N}$-sorted set (nonterminal symbols),
+			\item $\Sigma$ is a finite set (terminal symbols)
+				(with $\forall l \in \mathbb{N}: \Sigma \cap N_l = \emptyset$),
+			\item $\Xi$ is a finite nontempty set (variable symbols)
+				(with $\Xi \cap \Sigma = \emptyset$ and
+				$\forall l \in \mathbb{N}: \Xi \cap N_l = \emptyset$),
+			\item $P$ is a \emph{set of production rules}
+				of the form $\rho = \phi \to \psi$ where
+				\begin{itemize}
+					\item $\phi = A(\alpha_1, \ldots, \alpha_l)$
+						(called left-hand side of $\rho$)\\
+						where $l \in \mathbb{N}$, $A \in N_l$,
+						$\alpha_1, \ldots, \alpha_l \in (\Sigma \cup \Xi)^*$ and
+					\item $\psi = B_1(X^{(1)}_1, \ldots, X^{(1)}_{l_1})
+						\ldots B_m(X^{(m)}_1, \ldots, X^{(m)}_{l_m})$
+						(called right-hand side of $\rho$)\\
+						where $m \in \mathbb{N}$,
+						$B_1 \in N_{l_1}, \ldots, B_m \in N_{l_m}$,
+						$X^{(i)}_{j} \in \Xi$ for $1 \leq i \leq m, 1 \leq j \leq l_i$
+				\end{itemize}
+				and for every $X \in \Xi$ occurring in $\rho$ we require that $X$ occurs
+				exactly once in the left-hand side of $\rho$ and
+				exactly once in the right-hand side of $\rho$, and
+			\item $S \in N_1$ (initial nonterminal symbol).
+		\end{itemize}
+	\end{definition}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Example PLCFRS}
+	PLCFRS $(G, p)$ and $G = (N, \Sigma, \Xi, P, S)$ where
+	\begin{itemize}
+		\item $N = \{VROOT, S, VP, ADV, VAFIN, VAINF, VVINF, PPER, VVPP, \$, \ldots\}$,
+		\item $\Sigma = \{Nun, werden, sie, umworben, ., \ldots\}$ and
+		\item $P = \{ \ldots, $
+	\begin{align*}
+	\only<1>{
+		ADV(Nun) \to \varepsilon & \# 1,
+		& VAFIN(werden) \to \varepsilon & \# 0,5,\\
+		VAINF(werden) \to \varepsilon & \# 0,25,
+		& VVINF(werden) \to \varepsilon & \# 0,25,\\
+		PPER(sie) \to \varepsilon & \# 1,
+		& VVPP(umworben) \to \varepsilon & \# 1,\\
+		\$(.) \to \varepsilon & \# 1,}
+	\only<2>{
+		VP(X_1^{(1)}, X_1^{(2)}) \to ADV(X_1^{(1)}) VVP(X_1^{(2)}) & \# 0,5,\\
+		S(X_1^{(1)} X_1^{(2)} X_1^{(3)})
+			\to VAFIN(X_1^{(1)}) PPER(X_1^{(2)}) VVPP(X_1^{(3)}) & \# 0,25,\\
+		S(X_1^{(1)} X_1^{(2)}, X_2^{(1)})
+			\to VP(X_1^{(1)}, X_2^{(1)}) VAINF(X_1^{(2)}) & \# 0,25,\\
+		S(X_1^{(1)} X_1^{(2)} X_1^{(3)} X_2^{(1)})
+			\to VP(X_1^{(1)}, X_2^{(1)}) VAFIN(X_1^{(2)}) PPER(X_1^{(3)}) & \# 0,5,\\
+		S(X_1^{(1)} X_2^{(1)} X_1^{(2)} X_3^{(1)})
+			\to S(X_1^{(1)} X_2^{(1)}, X_3^{(1)}) PPER(X_1^{(2)}) & \# 0,25,\\
+		VROOT(X_1^{(1)} X_2^{(1)} X_3^{(1)} X_4^{(1)} X_1^{(2)})
+			\to S(X_1^{(1)} X_2^{(1)} X_3^{(1)} X_4^{(1)}) \$(X_1^{(2)}) & \# 1}
+	\end{align*}
+	$, \ldots\}$
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{\textproc{Parse} - Weighted Deductive Parsing:\\ Nun werden sie umworben .}
+	\begin{figure}[t]
+		\begin{overlayarea}{\textwidth}{\textheight}
+			\centering
+			\only<1>{\includegraphics[width=0.8\textwidth]{../img/parse_01.png}\\
+				Initialize vertives}
+			\only<2>{\includegraphics[width=0.8\textwidth]{../img/parse_02.png}\\
+				hyperedges for $ADV(Nun) \to \varepsilon \# 1, \ldots$}
+			\only<3>{\includegraphics[width=0.8\textwidth]{../img/parse_03.png}\\
+				hyperedge for $VP(X_1^{(1)}, X_1^{(2)}) 
+				\to ADV(X_1^{(1)}) VVP(X_1^{(2)}) \# 0,5$}
+			\only<4>{\includegraphics[width=0.8\textwidth]{../img/parse_04.png}\\
+				hyperedge for $S(X_1^{(1)} X_1^{(2)} X_1^{(3)})
+				\to VAFIN(X_1^{(1)}) PPER(X_1^{(2)}) VVPP(X_1^{(3)}) \# 0,25$}
+			\only<5>{\includegraphics[width=0.8\textwidth]{../img/parse_05.png}\\
+				hyperedge for $S(X_1^{(1)} X_1^{(2)}, X_2^{(1)})
+				\to VP(X_1^{(1)}, X_2^{(1)}) VAINF(X_1^{(2)}) \# 0,25$}
+			\only<6>{\includegraphics[width=0.8\textwidth]{../img/parse_06.png}\\
+				hyperedge for $S(X_1^{(1)} X_1^{(2)} X_1^{(3)} X_2^{(1)})
+				\to VP(X_1^{(1)}, X_2^{(1)}) VAFIN(X_1^{(2)}) PPER(X_1^{(3)}) \# 0,5$}
+			\only<7>{\includegraphics[width=0.8\textwidth]{../img/parse_07.png}\\
+				hyperedge for $S(X_1^{(1)} X_2^{(1)} X_1^{(2)} X_3^{(1)})
+				\to S(X_1^{(1)} X_2^{(1)}, X_3^{(1)}) PPER(X_1^{(2)}) \# 0,25$}
+			\only<8>{\includegraphics[width=0.8\textwidth]{../img/parse_08.png}\\
+				hyperedge for $VROOT(X_1^{(1)} X_2^{(1)} X_3^{(1)} X_4^{(1)} X_1^{(2)})
+				\to S(X_1^{(1)} X_2^{(1)} X_3^{(1)} X_4^{(1)}) \$(X_1^{(2)}) \# 1$}
+			\only<9>{\includegraphics[width=0.8\textwidth]{../img/parse_09.png}\\
+				Undesired hyperedges}
+			\only<10>{\includegraphics[width=0.8\textwidth]{../img/parse_10.png}\\
+				Prune}
+		\end{overlayarea}
+	\end{figure}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Motivation}
+	\begin{itemize}[<+->]
+		\item How to reduce the parse time for a sentence?
+		\item What is a good pruning method?
+		\item How to train such a pruning method?
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Overview}
+	\begin{itemize}
+		\item \textcolor{Grey}{Motivation}
+		\item Preliminaries
+		\item \textproc{Lols}
+		\item \textcolor{Grey}{Change Propagation}
+		\item \textcolor{Grey}{Dynamic Programming}
+		\item \textcolor{Grey}{Results}
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Preliminaries}
+	\begin{align*}
+		H = (V, E) \in \mathcal{H}_{(G, p)}(w) &:
+			\text{derivation graph from \textproc{Parse}}\\
+		c \subset \Sigma^* \times T_N(\Sigma)&: X \times Y-\text{corpus}\\
+		s &: \text{state of the derivation graph}\\
+		a \in \{\textcolor{Green}{keep}, \textcolor{Red}{prune}\} &: \text{action}\\
+		\tau = s_0a_0s_1a_1\ldots s_T &: \text{trajectory}
+	\end{align*}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Preliminaries}
+	\begin{align*}
+		\text{pruning policy } \pi &: \text{inputs a hyperedge and a sub sentence } w'\\
+			& \text{outputs a pruning decision }
+				a \in \{\textcolor{Green}{keep}, \textcolor{Red}{prune}\}
+	\end{align*}
+	How to evaluate $\pi$?
+	\visible<2>
+	{
+		\begin{align*}
+			\text{reward function } r &:
+				\mathcal{H}_{(G, p)}(w) \times T_N(\Sigma) \to \mathbb{R}\\
+			\text{schematically } r &= accuracy - \lambda \cdot runtime\\
+			\text{where } accuracy &: T_N(\Sigma) \times T_N(\Sigma) \to \mathbb{R}\\
+			\text{and } runtime &: \mathcal{H}_{(G, p)}(w) \to \mathbb{R}\\
+			\lambda \in \mathbb{R} &: \text{trade-off factor}\\
+			\text{empirical value of } \pi &: \mathcal{R}(\pi) =
+				\frac{1}{|c|}\sum_{(w, \xi) \in c}
+				r(\textproc{Parse}(G, w, \pi), \xi) \cdot c(w, \xi)
+		\end{align*}
+	}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Preliminaries}
+	trajectory: $s_0a_0s_1a_1 \ldots s_T$ \visible<2->{, (intervention at state $s_1$)}
+	\begin{figure}
+		\centering
+		\scalebox{0.9}{\input{../img/trajectory.tex}}
+	\end{figure}
+\end{frame}
+
+\begin{frame}
+	\frametitle{LOLS}
+	\framesubtitle{Locally Optimal Learning to Search}
+	\begin{center}
+		\scalebox{0.55}
+		{
+			\begin{minipage}{1.5\linewidth}
+				\input{../alg/lols.slides.tex}
+			\end{minipage}
+		}
+	\end{center}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Overview}
+	\begin{itemize}
+		\item \textcolor{Grey}{Motivation}
+		\item \textcolor{Grey}{Preliminaries}
+		\item \textcolor{Grey}{\textproc{Lols}}
+		\item Change Propagation
+		\item \textcolor{Grey}{Results}
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Change Propagation}
+	\begin{figure}
+		\begin{overlayarea}{\textwidth}{\textheight}
+			\centering
+			\only<1>{\includegraphics[width=0.8\textwidth]{../img/cp_1.png}\\
+				Change pruning bit}
+			\only<2>{\includegraphics[width=0.8\textwidth]{../img/cp_2.png}\\
+				Delete witness for $\{1, 2, 3, 4\}$ and S}
+			\only<3>{\includegraphics[width=0.8\textwidth]{../img/cp_3.png}\\
+				Find new witness for $\{1, 2, 3, 4\}$ and S}
+			\only<4>{\includegraphics[width=0.8\textwidth]{../img/cp_4.png}\\
+				Repeat for affected vertices}
+			\only<5>{\includegraphics[width=0.8\textwidth]{../img/cp_5.png}\\
+				Done}
+		\end{overlayarea}
+	\end{figure}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Overview}
+	\begin{itemize}
+		\item \textcolor{Grey}{Motivation}
+		\item \textcolor{Grey}{Preliminaries}
+		\item \textcolor{Grey}{\textproc{Lols}}
+		\item \textcolor{Grey}{Change Propagation}
+		\item Results
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Accuracy Measure}
+	\begin{overlayarea}{\textwidth}{0.5\textheight}
+		\only<1>
+		{
+			\begin{figure}
+				\scalebox{0.6}{\input{../img/recall.tex}}
+			\end{figure}
+		}
+		\only<2->
+		{
+			\begin{columns}
+				\column[t]{0.5\textwidth}
+				derivation tree by parsing
+				\begin{figure}
+					\only<2>{\scalebox{0.75}{\input{../img/recall3.tex}}}
+					\only<3>{\scalebox{0.75}{\input{../img/recall31.tex}}}
+					\only<4->{\scalebox{0.75}{\input{../img/recall32.tex}}}
+				\end{figure}
+				\column[t]{0.5\textwidth}
+				derivation tree by gold standard
+				\begin{figure}
+					\only<2>{\scalebox{0.75}{\input{../img/recall2.tex}}}
+					\only<3>{\scalebox{0.75}{\input{../img/recall21.tex}}}
+					\only<4->{\scalebox{0.75}{\input{../img/recall22.tex}}}
+				\end{figure}
+			\end{columns}
+		}
+	\end{overlayarea}
+	\begin{align*}
+		\text{precision} &= \frac{|TP|}{|TP|+|FP|}
+		&\text{recall} &= \frac{|TP|}{|TP|+|FN|}\\
+		\mathfrak{p}(\xi) &=
+		\frac{\visible<3->{3}}
+			{\visible<3->{3}\visible<4->{+ 3}}
+		\visible<5->{=0,5}
+		&\mathfrak{r}(\xi) &=
+		\frac{\visible<3->{3}}
+			{\visible<3->{3}\visible<4->{+ 1}}
+		\visible<5->{= 0,75}
+	\end{align*}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Setup}
+	\begin{align*}
+		accuracy(\xi, \zeta) &= 2 \cdot
+			\frac{\mathfrak{p}(\xi, \zeta) \cdot \mathfrak{r}(\xi, \zeta)}
+			{\mathfrak{p}(\xi, \zeta) + \mathfrak{r}(\xi, \zeta)}
+		& \text{ F1-Measure},\\
+		runtime(H) &= |E|
+		& \text{ for } H = (V, E)\\
+		\lambda &\in [0, 1]
+	\end{align*}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Results}
+	\begin{figure}
+    	\centering
+    	\subfloat[accuracy for $\lambda$]{{\includegraphics[width=0.45\textwidth]{../dia/accuracy.pdf} }}
+    	\qquad
+    	\subfloat[runtime for $\lambda$]{{\includegraphics[width=0.45\textwidth]{../dia/runtime.pdf} }}
+    	\caption{runtime and accuracy for given $lambda$}
+    \end{figure}
+\end{frame}
+
+\begin{frame}[allowframebreaks]
+	\frametitle{References}
+	\nocite{*}
+	\printbibliography
+\end{frame}
+
+\end{document}

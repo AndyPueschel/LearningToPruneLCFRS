@@ -1,0 +1,38 @@
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+\renewcommand{\Comment}[2][.5\linewidth]{%
+	\leavevmode\hfill\makebox[#1][l]{$\triangleright$~#2}}
+
+\begin{algorithm}
+	\caption{\textproc{Lols} algorithm for learning to prune
+		by \cite{vieira17} and \cite{chang15}}
+	\label{alg:lols}
+	\begin{algorithmic}[1]
+		\Require PLCFRS $(G, p)$ with $G = (N, \Sigma, \Xi, P, S)$,
+		\Statex $X\times Y$-corpus $c$ such that $X \subset \Sigma^*$
+			and $Y \subset T_N(\Sigma)$
+		\Ensure pruning policy $\pi$
+		\Statex
+		\Function{Lols}{$(G, p), c$}
+			\State $\pi_1 := $ \textproc{InitializePolicy}($\ldots$)
+			\For{$i := 1$ to $n$} \Comment{$n$ : number of iterations}
+				\State $Q_i := \emptyset$ \Comment{$Q_i$ : set of state-reward tuples}
+				\For{$(w, \xi) \in supp(c)$}
+					\State $\tau := \text{\textproc{Roll-In}}((G, p), w, \pi _i, \xi)$
+					\Comment{$\tau = s_0a_0s_1a_1 \ldots s_T$ : trajectory}
+					\For{$t := 0$ to $|\tau | - 1$}
+						\For{$\bar{a}_t \in \mathcal{A}$}
+							\Comment{intervention}
+							\State $\vec{r}_t[\bar{a}_t] :=$
+								\textproc{Roll-Out}($\pi_i, s_t, \bar{a}_t, \xi$)
+						\EndFor
+						\State $Q_i := Q_i \cup \{(s_t, \vec{r}_t)\}$
+					\EndFor
+				\EndFor
+				\State $\pi_{i+1} :=$ \textproc{Train}($\bigcup^{i}_{k=1} Q_k$)
+					\Comment{dataset aggregation}
+			\EndFor
+			\State \Return $\argmax_{\pi_j:1 \leq j \leq n}\mathcal{R}(\pi_j)$
+		\EndFunction
+	\end{algorithmic}
+\end{algorithm}

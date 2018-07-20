@@ -68,9 +68,8 @@ def train(args, stdinput):
         simplecorpus = simplecorpus[:nsents]
 
     # print the trained pruning policy into the console
-    # newpp = lols(grammar, simplecorpus, pp, iterations, weight, feats)
-    # stdout.write(str(newpp))
-    return lols(grammar, simplecorpus, pp, iterations, weight, feats)
+    newpp = lols(grammar, simplecorpus, pp, iterations, weight, feats)
+    stdout.write(newpp.serialize())
 
 
 def parse(args, stdinput):

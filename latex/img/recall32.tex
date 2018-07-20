@@ -1,0 +1,16 @@
+\begin{tikzpicture}
+	%nodes
+	\node[name=S, circle, fill=Gold]{S};
+	\node[name=NP, circle, fill=Tomato, below left=of S]{NP};
+	\node[name=VP, circle, fill=Tomato, below right=of S]{VP};
+	\node[name=NP2, circle, fill=Gold, below=of VP]{NP};
+	\node[name=NP3, circle, fill=Tomato, below left=of NP2]{NP};
+	\node[name=PP, circle, fill=Gold, below right=of NP2]{PP};
+	%path
+	\path
+		(S) edge (NP)
+		(S) edge (VP)
+		(VP) edge (NP2)
+		(NP2) edge (NP3)
+		(NP2) edge (PP);
+\end{tikzpicture}

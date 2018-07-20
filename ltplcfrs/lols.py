@@ -10,8 +10,6 @@ from .features import FeatureItem, FeatureCollector
 
 from discodop.tree import Tree
 
-from sys import stdout
-
 
 def lols(grammar, corpus, pp=PruningPolicy(), iterations=1, weight=1,
          featkeys=('l', 'sl', 'bwd', 'bwcd', 'ss', 'sw', 'wb', 'wscd')):
@@ -56,10 +54,6 @@ def lols(grammar, corpus, pp=PruningPolicy(), iterations=1, weight=1,
         rewardsum = 0.0  # initialize denominator for avg reward
         for sentence, tree in corpus:
             # roll in
-            print("\n####\n")
-            print("iteration: %i # sentence: %s" % (i, str(sentence)))
-            print("parse...")
-            stdout.flush()
             derivation_graph = parser.parse(' '.join(sentence), policies[i])
             for edge in derivation_graph.get_edges():
                 # dont train leaf items
@@ -74,29 +68,18 @@ def lols(grammar, corpus, pp=PruningPolicy(), iterations=1, weight=1,
                 rhs = [(nt, n.get_label()) for n, nt in edge.get_successors()]
                 fitem = FeatureItem(lhs, rhs, sentence)
                 # roll out
-                print("\nsuccs: %s" % str(edge.get_successors()))
-                print("roll-out: %s" % str(fitem))
-                print("\npre change:")
                 r[pbit] = reward(weight, derivation_graph, tree)
                 edge.set_pruningbit(nbit)
-                print("\npast change:")
                 r[nbit] = reward(weight, derivation_graph, tree)
-                print("\nrewards: %s" % str(r))
                 edge.set_pruningbit(pbit)
-                print("difference: %f" % (r[1] - r[0]))
-                stdout.flush()
                 # feature item and sentence correspond to a state
                 datasubset.append((fitem, r))
             # increase the denominator
             rewardsum += reward(weight, derivation_graph, tree)
         # train
         dataset.append(datasubset)
-        print("train...")
-        stdout.flush()
         policies[i+1] = train(dataset, collector)
         rewards[i] = rewardsum / len(corpus)
-    print("chose policy...")
-    stdout.flush()
     maxidx = max(rewards, key=rewards.get)
     return policies[maxidx]
 
@@ -123,9 +106,6 @@ def train(q, collector):
     else:
         ti, tr = zip(*dataset)
     data, rewards = list(ti), list(tr)
-    print("raw rewards: prune-keep tuples")
-    print(rewards)
-    stdout.flush()
     rewards = [r[1] - r[0] for r in rewards]
     collector.drop_data()
     collector.inject_data(data)
@@ -154,15 +134,8 @@ def reward(l, dg, gt):
     """
     tree = dg.get_tree()
     acc = accuracy(tree, gt)
-    if isinstance(tree, Tree):
-        print(tree.pprint())
-    else:
-        print(tree)
-    stdout.flush()
     run = runtime(dg)
-    reward = (acc) / (l * run) if run != 0 else acc
-    print("\nreward: %f = %f / (%f * %i)" %
-          (reward, acc, l, run))
+    reward = acc - (l * run)
     return reward
 
 

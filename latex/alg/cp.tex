@@ -1,0 +1,59 @@
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+\renewcommand{\Comment}[2][.5\linewidth]{%
+	\leavevmode\hfill\makebox[#1][l]{$\triangleright$~#2}}
+	
+\begin{algorithm}
+	\caption{change propagation algorithm by \cite{vieira17} and \cite{acar09}}
+	\label{alg:cp}
+	\begin{algorithmic}[1]
+		\Require pruned derivation graph
+			$H = (V, E, \nu, \omega) \in \mathcal{I}_{(G, p)}(w)$,
+		\Statex current hyperedge
+			$e = (v, A)\langle \wp\rangle \to \theta \in E$
+		\Statex new value $\hat{b} \in \{0, 1\}$
+		\Statex
+		\Function{Change}{$H, e, b$}
+			\State $b(e) := \hat{b}$
+				\Comment{redefine mapping for $e$}
+			\State $\omega(v, A) := NULL$
+				\Comment{redefine mapping for $v$ and $A$}
+			\State $Q := \{(v, A)\}$
+			\While{$Q \neq \emptyset$}
+				\State Choose $(u, B)$ from $Q$
+				\State $Q := Q \setminus \{u, B)\}$
+				\If{$\omega(u, B) = NULL$}
+					\State \textproc{Recompute}($u, B$)
+				\EndIf
+				\For{$o \in Out(u, B)$}
+					\Comment{$o = (v_o, A_o) \langle \wp_o \rangle \to \theta_o$
+						: hyper edge}
+					\State $s := \wp_o \cdot b(o) \cdot
+						\prod_{(u_o, B_o)\in \theta_o}\omega(u_o, B_o)|_2$
+					\If{$s > \omega(v_o, A_o)|_2$}
+						\State $\omega(v_o, A_o) := (o, s)$
+							\Comment{redefine mapping for $v_o$ and $A_o$}
+						\State $Q := Q \cup \{(v_o, A_o)\}$
+					\ElsIf{$\omega(v_o, A_o) = (e, p)$ and $p < \omega(v_o, A_o)|_2$}
+						\State $\omega(v_o, A_o) := NULL$
+							\Comment{redefine mapping for $v_o$ and $A_o$}
+						\State $Q := Q \cup \{(v_o, A_o)\}$
+					\EndIf
+				\EndFor
+			\EndWhile
+		\EndFunction
+		\Statex
+		\Function{Recompute}{$v, A$}
+			\For{$i \in In(v, A)$}
+				\Comment{$i = (v_i, A_i)\langle \wp_i \rangle \to \theta_i$
+					: hyperedge}
+				\State $s := \wp_i \cdot b(i) \cdot
+					\prod_{(u_i, B_i) \in \theta_i}\omega(u_i, B_i)|_2$
+				\If{$s > \omega(v_i, A_i)|_2$}
+					\State $\omega(v_i, A_i) := (i, s)$
+						\Comment{redefine mapping for $v_i$ and $A_i$}
+				\EndIf
+			\EndFor
+		\EndFunction
+	\end{algorithmic}
+\end{algorithm}
