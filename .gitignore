@@ -1,12 +1,26 @@
+# data specific files
 data/*
 !data/policy.txt
 !data/tiger.1-1000.utf8.xml
+
+# documentation and material
 latex
 docs
 material
+
+# platform dependencies
 .idea
 Pipfile
 Pipfile.lock
+
+# test fragments
 tparse.txt
 tparse.pp.txt
 ttrain.txt
+__pycache__/
+
+# vagrant files
+.vagrant/*
+lib/*
+Vagrantfile
+ubuntu-xenial-16.04-cloudimg-console.log
